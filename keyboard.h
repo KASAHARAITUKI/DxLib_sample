@@ -21,7 +21,7 @@ extern KEYBOARD keyboard;
 
 // プロトタイプ宣言
 extern VOID AllKeyUpdate(VOID);								// 全てのキーの状態を取得する
-extern BOOL KeyDown(int KEY_INPUTE_);						// 特定のキーを押しているか?
-extern BOOL KeyUp(int KEY_INPUTE_);							// 特定のキーをあげているか?
-extern BOOL KeyClick(int KEY_INPUTE_);						// 特定のキーをクリックしたか?
-extern BOOL KeyDownKeep(int KEY_INPUTE_,int millsec);		// 特定のキーを指定のミリ秒分押し続けているか?
+extern BOOL KeyDown(int KEY_INPUT_);						// 特定のキーを押しているか?
+extern BOOL KeyUp(int KEY_INPUT_);							// 特定のキーをあげているか?
+extern BOOL KeyClick(int KEY_INPUT_);						// 特定のキーをクリックしたか?
+extern BOOL KeyDownKeep(int KEY_INPUT_,int MillSec);		// 特定のキーを指定のミリ秒分押し続けているか?
