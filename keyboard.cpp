@@ -46,8 +46,7 @@ VOID AllKeyUpdate(VOID)
 BOOL KeyDown(int KEY_INPUT_)
 {
 	if (
-		keyboard.OldAllKeyState[KEY_INPUT_] != 0		// ˆÈ‘O‚Í‰Ÿ‚µ‚Ä‚¢‚½
-		&& keyboard.AllKeyState[KEY_INPUT_] == 0	// Œ»İ‚Í‰Ÿ‚µ‚Ä‚¢‚È‚¢
+		keyboard.OldAllKeyState[KEY_INPUT_] != 0
 		)
 	{
 		return TRUE;
