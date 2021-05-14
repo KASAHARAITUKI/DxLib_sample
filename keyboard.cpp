@@ -59,6 +59,26 @@ BOOL KeyDown(int KEY_INPUT_)
 }
 
 /// <summary>
+/// キーをあげているか、キーコードで判断する
+/// </summary>
+/// <param name="KEY_INPUT_">キーコード</param>
+/// <returns>あげていたらTRUE</returns>
+BOOL KeyUp(int KEY_INPUT_)
+{
+	if (
+		keyboard.OldAllKeyState[KEY_INPUT_] != 0		// 以前は押していた
+		&& keyboard.AllKeyState[KEY_INPUT_] == 0	// 現在は押していない
+		)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+/// <summary>
 /// キーをクリックしたか、キーコードで判断する
 /// </summary>
 /// <param name="KEY_INPUT_">キーコード</param>
