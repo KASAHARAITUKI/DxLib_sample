@@ -157,16 +157,16 @@ int WINAPI WinMain(
 		// キー入力
 		if (KeyDown(KEY_INPUT_UP) == TRUE)
 		{
-			Y--;		// 上に移動
+			Y-=5;		// 上に移動
 		}if (KeyDown(KEY_INPUT_DOWN) == TRUE)
 		{
-			Y++;		// 下に移動
+			Y+=5;		// 下に移動
 		}if (KeyDown(KEY_INPUT_LEFT) == TRUE)
 		{
-			X--;		// 左に移動
+			X-=5;		// 左に移動
 		}if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
 		{
-			X++;		// 右に移動
+			X+=5;		// 右に移動
 		}
 
 		DrawCircle(X, Y, radius, GetColor(255, 255, 0), TRUE);
@@ -331,7 +331,7 @@ VOID ChangeProc(VOID)
 	// フェードアウト
 	if (IsFadeOut == TRUE)
 	{
-		if (fadeOutCnt > fadeOutCntMax)
+		if (fadeOutCnt < fadeOutCntMax)
 		{
 			fadeOutCnt++;	// カウンタを増やす
 		}
@@ -393,6 +393,6 @@ VOID ChangeDraw(VOID)
 	// 半透明終了
 	SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-	DrawString(0, 0, "切り替え画面", GetColor(0, 0, 0));
+	DrawString(0, 16, "切り替え画面", GetColor(0, 0, 0));
 	return;
 }
