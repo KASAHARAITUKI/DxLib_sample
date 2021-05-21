@@ -1,7 +1,7 @@
 #pragma once
 
 // ヘッダファイルの読み込み
-#include "DxLib.h"
+#include "game.h"
 
 // マクロ定義
 #define GAME_FPS			60	// FPSの標準
