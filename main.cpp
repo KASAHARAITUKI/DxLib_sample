@@ -73,6 +73,8 @@ VOID ChangeScene(GAME_SCENE scene);		// シーン切り替え
 VOID CollUpdatePlayer(CHARACTOR* chara);		// 当たり判定の領域を更新
 VOID CollUpdate(CHARACTOR* chara);				// 当たり判定
 
+BOOL OnCollRect(RECT a, RECT b);				// 矩形と矩形の当たり判定
+
 // プログラムは WinMain から始まります
 // windowsのプログラミング方法 = (WinAPI)で動いている！
 // DxLibは、DirectXという、ゲームプログラミングを簡単に使える仕組み
@@ -163,14 +165,15 @@ int WINAPI WinMain(
 	// 画像の幅と高さを取得
 	GetGraphSize(Goal.handle, &Goal.width, &Goal.height);
 
-	// 当たり判定を更新する
-	CollUpdate(&Goal);			// ゴールの当たり判定のアドレス
-
 	// ゴールを初期化
 	Goal.x = GAME_WIDTH - Goal.width;
 	Goal.y = 0;
 	Goal.speed = 500;
 	Goal.IsDraw = TRUE;							// 描画できる
+
+
+	// 当たり判定を更新する
+	CollUpdate(&Goal);			// ゴールの当たり判定のアドレス
 
 	// 無限ループ
 	while (1)
@@ -304,13 +307,13 @@ VOID Play(VOID)
 /// </summary>
 VOID PlayProc(VOID)
 {
-	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+	if (GAME_DEBUG == TRUE)
 	{
-		// シーン切り替え
-		// 次のシーンの初期化をここで行うと楽
-
-		// エンド画面に切り替え
-		ChangeScene(GAME_SCENE_END);
+		if (KeyClick(KEY_INPUT_RETURN) == TRUE)
+		{
+			// エンド画面に切り替え
+			ChangeScene(GAME_SCENE_END);
+		}
 	}
 
 	// プレイヤーの操作
@@ -337,7 +340,19 @@ VOID PlayProc(VOID)
 	// 当たり判定を更新する
 	CollUpdatePlayer(&player);
 
-	return;
+	// ゴールの当たり判定を更新する
+	CollUpdate(&Goal);
+	
+	// プレイヤーがゴールに当たった時は
+	if (OnCollRect(player.coll, Goal.coll) == TRUE)
+	{
+		// エンド画面に切り替え
+		ChangeScene(GAME_SCENE_END);
+		
+		// 処理を強制終了
+		return;
+	}
+
 }
 
 /// <summary>
@@ -540,4 +555,29 @@ VOID CollUpdate(CHARACTOR* chara)
 	chara->coll.bottom = chara->y + chara->height;
 
 	return;
+}
+
+/// <summary>
+/// 矩形と矩形の当たり判定
+/// </summary>
+/// <param name="player">矩形A</param>
+/// <param name="">矩形B</param>
+/// <returns>あたったらTRUE/あたらないならFALSE</returns>
+BOOL OnCollRect(RECT a, RECT b)
+{
+	if (
+		a.left < b.right &&
+		a.right > b.left &&
+		a.top < b.bottom &&
+		a.bottom > b.top
+		)
+	{
+		// 当たっているとき
+		return TRUE;
+	}
+	else
+	{
+		// 当たっていないとき
+		return FALSE;
+	}
 }
