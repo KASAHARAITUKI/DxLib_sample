@@ -22,11 +22,28 @@ struct CHARACTOR
 	BOOL IsDraw = FALSE;		// 画像が描画できる？
 };
 
+// 動画の構造体
+struct MOVIE
+{
+	int handle = -1;		// 動画のハンドル
+	char path[255];			// 動画のパス
+
+	int x;					// X位置
+	int y;					// Y位置
+	int width;				// 幅
+	int height;				// 高さ
+
+	int Volume = 255;		// ボリューム(最小)0～255(最大)
+};
+
 // グローバル変数
 // シーンを管理する変数
 GAME_SCENE GameScene;			// 現在のゲームのシーン
 GAME_SCENE OldGameScene;		// 前回のゲームのシーン
 GAME_SCENE NextGameScene;		// 次のゲームのシーン
+
+// プレイ背景の動画
+MOVIE playMovie;
 
 // プレイヤー
 CHARACTOR player;
@@ -75,6 +92,9 @@ VOID CollUpdate(CHARACTOR* chara);				// 当たり判定
 
 BOOL OnCollRect(RECT a, RECT b);				// 矩形と矩形の当たり判定
 
+BOOL GameLoad(VOID);							// ゲームのデータの読み込み
+VOID GameInit(VOID);							// ゲームのデータの初期化
+
 // プログラムは WinMain から始まります
 // windowsのプログラミング方法 = (WinAPI)で動いている！
 // DxLibは、DirectXという、ゲームプログラミングを簡単に使える仕組み
@@ -84,9 +104,7 @@ int WINAPI WinMain(
 	LPSTR lpCmdLine, 
 	int nCmdShow)
 {
-	SetOutApplicationLogValidFlag(FALSE);
-	// Log.txtを出力しない
-
+	SetOutApplicationLogValidFlag(FALSE);				// Log.txtを出力しない
 	ChangeWindowMode(TRUE);								// ウィンドウモードに設定
 	SetMainWindowText(GAME_TITLE);						// ウィンドウのタイトルの文字
 	SetGraphMode(GAME_WIDTH, GAME_HEIGHT, GAME_COLOR);	// ウィンドウの解像度を設定
@@ -114,66 +132,16 @@ int WINAPI WinMain(
 
 	// ゲーム全体の初期化
 
-	// プレイヤーの画像の読み込み
-	strcpyDx(player.path, ".\\Image\\player.png");	// パスのコピー
-	player.handle = LoadGraph(player.path);			// 画像の読み込み
-
-	// 画像が読み込めなかった時は、エラー(-1)が入る
-	if (player.handle == -1)
+	// ゲーム読み込み
+	if (!GameLoad())
 	{
-		MessageBox
-		(GetMainWindowHandle(),			// メインのウィンドウハンドル
-			player.path,				// メッセージ本文
-			"画像読み込みエラー！",		// メッセージタイトル
-			MB_OK						// ボタン
-		);
-
-		DxLib_End();		// 強制終了
-		return -1;			// エラー終了
+		// データの読み込みに失敗したとき
+		DxLib_End();		// DxLib終了
+		return -1;			// 異常終了
 	}
 
-	// 画像の幅と高さを取得
-	GetGraphSize(player.handle, &player.width, &player.height);
-
-	// 当たり判定を更新する
-	CollUpdatePlayer(&player);			// プレイヤーの当たり判定のアドレス
-
-	// プレイヤーを初期化
-	player.x = GAME_WIDTH / 2 - player.width / 2;	// 中央寄せ
-	player.y = GAME_HEIGHT / 2 - player.height / 2;	// 中央寄せ
-	player.speed = 500;
-	player.IsDraw = TRUE;							// 描画できる
-
-	// ゴールの画像の読み込み
-	strcpyDx(Goal.path, ".\\Image\\Goal.png");	// パスのコピー
-	Goal.handle = LoadGraph(Goal.path);			// 画像の読み込み
-
-	// 画像が読み込めなかった時は、エラー(-1)が入る
-	if (Goal.handle == -1)
-	{
-		MessageBox
-		(GetMainWindowHandle(),			// メインのウィンドウハンドル
-			Goal.path,				// メッセージ本文
-			"画像読み込みエラー！",		// メッセージタイトル
-			MB_OK						// ボタン
-		);
-
-		DxLib_End();		// 強制終了
-		return -1;			// エラー終了
-	}
-
-	// 画像の幅と高さを取得
-	GetGraphSize(Goal.handle, &Goal.width, &Goal.height);
-
-	// ゴールを初期化
-	Goal.x = GAME_WIDTH - Goal.width;
-	Goal.y = 0;
-	Goal.speed = 500;
-	Goal.IsDraw = TRUE;							// 描画できる
-
-
-	// 当たり判定を更新する
-	CollUpdate(&Goal);			// ゴールの当たり判定のアドレス
+	// ゲームの初期化
+	GameInit();
 
 	// 無限ループ
 	while (1)
@@ -239,11 +207,110 @@ int WINAPI WinMain(
 	// 終わるときの処理
 	DeleteGraph(player.handle);		// 画像をメモリ上から削除
 	DeleteGraph(Goal.handle);
+	DeleteGraph(playMovie.handle);
 
 	// ＤＸライブラリ使用の終了処理
 	DxLib_End();
 
 	return 0; 	// ソフトの終了
+}
+
+/// <summary>
+/// ゲームのデータを読み込み
+/// </summary>
+/// <returns>読み込めたらTRUE / 読み込めなかったらFALSE</returns>
+BOOL GameLoad(VOID)
+{
+	// プレイ動画の背景を読み込み
+	strcpyDx(playMovie.path, ".\\movie\\PlayMovie.mp4");	// パスのコピー
+	playMovie.handle = LoadGraph(playMovie.path);			// 画像の読み込み
+
+	// 動画が読み込めなかった時は、エラー(-1)が入る
+	if (playMovie.handle == -1)
+	{
+		MessageBox
+		(GetMainWindowHandle(),			// メインのウィンドウハンドル
+			playMovie.path,				// メッセージ本文
+			"動画読み込みエラー！",		// メッセージタイトル
+			MB_OK						// ボタン
+		);
+
+		return FALSE;					// 読み込み失敗
+	}
+
+	// 動画の幅と高さを取得
+	GetGraphSize(playMovie.handle, &playMovie.width, &playMovie.height);
+
+	// 動画のボリューム
+	playMovie.Volume = 255;
+
+
+	// プレイヤーの画像の読み込み
+	strcpyDx(player.path, ".\\Image\\player.png");	// パスのコピー
+	player.handle = LoadGraph(player.path);			// 画像の読み込み
+
+	// 画像が読み込めなかった時は、エラー(-1)が入る
+	if (player.handle == -1)
+	{
+		MessageBox
+		(GetMainWindowHandle(),			// メインのウィンドウハンドル
+			player.path,				// メッセージ本文
+			"画像読み込みエラー！",		// メッセージタイトル
+			MB_OK						// ボタン
+		);
+
+		return FALSE;					// 読み込み失敗
+	}
+
+	// 画像の幅と高さを取得
+	GetGraphSize(player.handle, &player.width, &player.height);
+
+
+	// ゴールの画像の読み込み
+	strcpyDx(Goal.path, ".\\Image\\Goal.png");	// パスのコピー
+	Goal.handle = LoadGraph(Goal.path);			// 画像の読み込み
+
+	// 画像が読み込めなかった時は、エラー(-1)が入る
+	if (Goal.handle == -1)
+	{
+		MessageBox
+		(GetMainWindowHandle(),			// メインのウィンドウハンドル
+			Goal.path,					// メッセージ本文
+			"画像読み込みエラー！",		// メッセージタイトル
+			MB_OK						// ボタン
+		);
+
+		return FALSE;					// 読み込み失敗
+	}
+
+	// 画像の幅と高さを取得
+	GetGraphSize(Goal.handle, &Goal.width, &Goal.height);
+
+
+	return TRUE;						// 全て読み込めた!
+}
+
+
+VOID GameInit(VOID)
+{
+	// プレイヤーを初期化
+	player.x = GAME_WIDTH / 2 - player.width / 2;	// 中央寄せ
+	player.y = GAME_HEIGHT / 2 - player.height / 2;	// 中央寄せ
+	player.speed = 500;
+	player.IsDraw = TRUE;					// 描画できる
+
+	// 当たり判定を更新する
+	CollUpdatePlayer(&player);				// プレイヤーの当たり判定のアドレス
+
+	// ゴールを初期化
+	Goal.x = GAME_WIDTH - Goal.width;
+	Goal.y = 0;
+	Goal.speed = 500;
+	Goal.IsDraw = TRUE;						// 描画できる
+
+
+	// 当たり判定を更新する
+	CollUpdate(&Goal);						// ゴールの当たり判定のアドレス
 }
 
 /// <summary>
@@ -255,6 +322,8 @@ VOID ChangeScene(GAME_SCENE scene)
 	GameScene = scene;		// シーンを切り替え
 	IsFadeIn = FALSE;		// フェードインしない
 	IsFadeOut = TRUE;		// フェードアウトする
+
+	return;
 }
 
 /// <summary>
@@ -264,6 +333,7 @@ VOID Title(VOID)
 {
 	TitleProc();		// 処理
 	TitleDraw();		// 描画
+
 	return;
 }
 
@@ -276,6 +346,9 @@ VOID TitleProc(VOID)
 	{
 		// シーン切り替え
 		// 次のシーンの初期化をここで行うと楽
+
+		// ゲームの初期化
+		GameInit();
 
 		// プレイ画面に切り替え
 		ChangeScene(GAME_SCENE_PLAY);
@@ -352,7 +425,7 @@ VOID PlayProc(VOID)
 		// 処理を強制終了
 		return;
 	}
-
+	return;
 }
 
 /// <summary>
@@ -360,6 +433,19 @@ VOID PlayProc(VOID)
 /// </summary>
 VOID PlayDraw(VOID)
 {
+	// 背景の動画を描画
+	
+	// もし、動画が再生されていないとき
+	if (GetMovieStateToGraph(playMovie.handle) == 0)
+	{
+		// 再生する
+		SeekMovieToGraph(playMovie.handle, 0);		// シークバーを最初に戻す
+		PlayMovieToGraph(playMovie.handle);			// 再生する
+	}
+
+	// 動画を描画(画像を引き延ばす)
+	DrawExtendGraph(0, 0, GAME_WIDTH, GAME_HEIGHT, playMovie.handle, TRUE);
+
 	// プレイヤーを描画
 	if (player.IsDraw == TRUE)
 	{
@@ -530,7 +616,7 @@ VOID ChangeDraw(VOID)
 }
 
 /// <summary>
-/// 当たり判定の領域更新
+/// 当たり判定の領域更新(プレイヤー)
 /// </summary>
 /// <param name="Coll">当たり判定の領域</param>
 VOID CollUpdatePlayer(CHARACTOR* chara)
@@ -581,3 +667,4 @@ BOOL OnCollRect(RECT a, RECT b)
 		return FALSE;
 	}
 }
+
