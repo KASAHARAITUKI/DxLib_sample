@@ -36,6 +36,16 @@ struct MOVIE
 	int Volume = 255;		// ボリューム(最小)0～255(最大)
 };
 
+// 音楽の構造体
+struct AUDIO
+{
+	int handle = -1;		// 音楽のハンドル
+	char path[255];			// 音楽のパス
+
+	int Volume = -1;		// ボリューム(MIN 0 ～ 255 MAX)
+	int playType = -1;		
+};
+
 // グローバル変数
 // シーンを管理する変数
 GAME_SCENE GameScene;			// 現在のゲームのシーン
@@ -50,6 +60,11 @@ CHARACTOR player;
 
 // ゴール
 CHARACTOR Goal;
+
+// 音楽
+AUDIO TitleBGM;
+AUDIO PlayBGM;
+AUDIO EndBGM;
 
 // 画面の切り替え
 BOOL IsFadeOut = FALSE;		// フェードアウト
@@ -286,7 +301,63 @@ BOOL GameLoad(VOID)
 	// 画像の幅と高さを取得
 	GetGraphSize(Goal.handle, &Goal.width, &Goal.height);
 
+	// 音楽の読み込み
+	strcpyDx(TitleBGM.path, ".\\Audio\\title.mp3");
+	TitleBGM.handle = LoadSoundMem(TitleBGM.path);
 
+	// 音楽が読み込めなかった時は、エラー(-1)が入る
+	if (TitleBGM.handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	// メインのウィンドウハンドル
+			TitleBGM.path,			// メッセージ本文
+			"音楽読み込みエラー",	// メッセージタイトル
+			MB_OK					// ボタン
+		);
+
+		return FALSE;				// 読み込み失敗
+	}
+
+	TitleBGM.playType = DX_PLAYTYPE_LOOP;	// 音楽をループさせる
+	TitleBGM.Volume = 255;					// MAXが255
+
+	strcpyDx(PlayBGM.path, ".\\Audio\\play.mp3");
+	PlayBGM.handle = LoadSoundMem(PlayBGM.path);
+
+	// 音楽が読み込めなかった時は、エラー(-1)が入る
+	if (PlayBGM.handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	// メインのウィンドウハンドル
+			PlayBGM.path,			// メッセージ本文
+			"音楽読み込みエラー",	// メッセージタイトル
+			MB_OK					// ボタン
+		);
+
+		return FALSE;				// 読み込み失敗
+	}
+
+	PlayBGM.playType = DX_PLAYTYPE_LOOP;	// 音楽をループさせる
+	PlayBGM.Volume = 255;					// MAXが255
+
+	strcpyDx(EndBGM.path, ".\\Audio\\end.mp3");
+	EndBGM.handle = LoadSoundMem(EndBGM.path);
+
+	// 音楽が読み込めなかった時は、エラー(-1)が入る
+	if (EndBGM.handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	// メインのウィンドウハンドル
+			EndBGM.path,			// メッセージ本文
+			"音楽読み込みエラー",	// メッセージタイトル
+			MB_OK					// ボタン
+		);
+
+		return FALSE;				// 読み込み失敗
+	}
+
+	EndBGM.playType = DX_PLAYTYPE_LOOP;	// 音楽をループさせる
+	EndBGM.Volume = 255;					// MAXが255
 	return TRUE;						// 全て読み込めた!
 }
 
@@ -344,6 +415,9 @@ VOID TitleProc(VOID)
 {
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
+		// BGMを止める
+		StopSoundMem(TitleBGM.handle);
+
 		// シーン切り替え
 		// 次のシーンの初期化をここで行うと楽
 
@@ -352,7 +426,17 @@ VOID TitleProc(VOID)
 
 		// プレイ画面に切り替え
 		ChangeScene(GAME_SCENE_PLAY);
+
+		return;
 	}
+
+	// BGMが流れていないとき
+	if (CheckSoundMem(TitleBGM.handle) == 0)
+	{
+		// BGMを流す
+		PlaySoundMem(TitleBGM.handle, TitleBGM.playType);
+	}
+
 	return;
 }
 
@@ -384,9 +468,21 @@ VOID PlayProc(VOID)
 	{
 		if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 		{
+			// BGMを止める
+			StopSoundMem(PlayBGM.handle);
+
 			// エンド画面に切り替え
 			ChangeScene(GAME_SCENE_END);
+
+			return;
 		}
+	}
+
+	// BGMが流れていないとき
+	if (CheckSoundMem(PlayBGM.handle) == 0)
+	{
+		// BGMを流す
+		PlaySoundMem(PlayBGM.handle, PlayBGM.playType);
 	}
 
 	// プレイヤーの操作
@@ -408,6 +504,7 @@ VOID PlayProc(VOID)
 	if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
 	{
 		player.x += player.speed * fps.DeltaTime;
+
 	}
 
 	// 当たり判定を更新する
@@ -419,12 +516,16 @@ VOID PlayProc(VOID)
 	// プレイヤーがゴールに当たった時は
 	if (OnCollRect(player.coll, Goal.coll) == TRUE)
 	{
+		// BGMを止める
+		StopSoundMem(PlayBGM.handle);
+
 		// エンド画面に切り替え
 		ChangeScene(GAME_SCENE_END);
 		
 		// 処理を強制終了
 		return;
 	}
+
 	return;
 }
 
@@ -497,12 +598,27 @@ VOID EndProc(VOID)
 {
 	if (KeyClick(KEY_INPUT_RETURN) == TRUE)
 	{
+		// BGMを止める
+		StopSoundMem(EndBGM.handle);
+
 		// シーン切り替え
 		// 次のシーンの初期化をここで行うと楽
 
 		// タイトル画面に切り替え
 		ChangeScene(GAME_SCENE_TITLE);
+
+		return;
 	}
+
+	// BGMが流れていないとき
+	if (CheckSoundMem(EndBGM.handle) == 0)
+	{
+		// BGMを流す
+		PlaySoundMem(EndBGM.handle, EndBGM.playType);
+
+		return;
+	}
+
 	return;
 }
 
