@@ -66,6 +66,9 @@ AUDIO TitleBGM;
 AUDIO PlayBGM;
 AUDIO EndBGM;
 
+// 効果音
+AUDIO PlayerSE;
+
 // 画面の切り替え
 BOOL IsFadeOut = FALSE;		// フェードアウト
 BOOL IsFadeIn = FALSE;		// フェードイン
@@ -223,6 +226,7 @@ int WINAPI WinMain(
 	DeleteGraph(player.handle);		// 画像をメモリ上から削除
 	DeleteGraph(Goal.handle);
 	DeleteGraph(playMovie.handle);
+	DeleteGraph(PlayerSE.handle);
 
 	// ＤＸライブラリ使用の終了処理
 	DxLib_End();
@@ -356,9 +360,30 @@ BOOL GameLoad(VOID)
 		return FALSE;				// 読み込み失敗
 	}
 
+	// 効果音の読み込み
+	strcpyDx(PlayerSE.path, ".\\Audio\\asioto.mp3");
+	PlayerSE.handle = LoadSoundMem(PlayerSE.path);
+
+	// 効果音が読み込めなかった時は、エラー(-1)が入る
+	if (PlayerSE.handle == -1)
+	{
+		MessageBox(
+			GetMainWindowHandle(),	// メインのウィンドウハンドル
+			PlayerSE.path,			// メッセージ本文
+			"音楽読み込みエラー",	// メッセージタイトル
+			MB_OK					// ボタン
+		);
+
+		return FALSE;				// 読み込み失敗
+	}
+
+	TitleBGM.playType = DX_PLAYTYPE_LOOP;	// 音楽をループさせる
+	TitleBGM.Volume = 255;					// MAXが255
+
 	EndBGM.playType = DX_PLAYTYPE_LOOP;	// 音楽をループさせる
 	EndBGM.Volume = 255;					// MAXが255
 	return TRUE;						// 全て読み込めた!
+
 }
 
 
@@ -489,21 +514,42 @@ VOID PlayProc(VOID)
 	if (KeyDown(KEY_INPUT_UP) == TRUE)
 	{
 		player.y -= player.speed * fps.DeltaTime;
+
+		// 動くときの効果音を追加
+		if (CheckSoundMem(PlayerSE.handle) == 0)
+		{
+			PlaySoundMem(PlayerSE.handle, PlayerSE.playType);
+		}
 	}
 
 	if (KeyDown(KEY_INPUT_DOWN) == TRUE)
 	{
 		player.y += player.speed * fps.DeltaTime;
+		// 動くときの効果音を追加
+		if (CheckSoundMem(PlayerSE.handle) == 0)
+		{
+			PlaySoundMem(PlayerSE.handle, PlayerSE.playType);
+		}
 	}
 
 	if (KeyDown(KEY_INPUT_LEFT) == TRUE)
 	{
 		player.x -= player.speed * fps.DeltaTime;
+		// 動くときの効果音を追加
+		if (CheckSoundMem(PlayerSE.handle) == 0)
+		{
+			PlaySoundMem(PlayerSE.handle, PlayerSE.playType);
+		}
 	}
 
 	if (KeyDown(KEY_INPUT_RIGHT) == TRUE)
 	{
 		player.x += player.speed * fps.DeltaTime;
+		// 動くときの効果音を追加
+		if (CheckSoundMem(PlayerSE.handle) == 0)
+		{
+			PlaySoundMem(PlayerSE.handle, PlayerSE.playType);
+		}
 
 	}
 
